@@ -1,6 +1,6 @@
 {
   "name": "@listenrightmeeow/newk-plugin-lazy-loading",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Advanced lazy loading with Intersection Observer, blur placeholders, and progressive enhancement",
   "type": "module",
   "main": "dist/index.js",

@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/listenrightmeow/newk-plugin-lazy-loading/compare/v1.0.0...v1.0.1) (2025-08-07)
+
+
+### Bug Fixes
+
+* correct NPM scope to [@listenrightmeeow](https://github.com/listenrightmeeow) and add public access ([8841b09](https://github.com/listenrightmeow/newk-plugin-lazy-loading/commit/8841b09fec43f698e8eae5117a782d29fb98dc98))
+
 # 1.0.0 (2025-08-07)
 
 
