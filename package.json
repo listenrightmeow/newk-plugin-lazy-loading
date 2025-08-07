@@ -1,0 +1,56 @@
+{
+  "name": "@listenrightmeow/newk-plugin-lazy-loading",
+  "version": "0.0.0-semantic-release",
+  "description": "Advanced lazy loading with Intersection Observer, blur placeholders, and progressive enhancement",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "echo \"Tests coming soon\"",
+    "lint": "echo \"Linting coming soon\"",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "newk",
+    "lazy-loading",
+    "intersection-observer",
+    "performance",
+    "images",
+    "components",
+    "progressive-enhancement",
+    "blur-placeholder"
+  ],
+  "author": "@listenrightmeow",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/listenrightmeow/newk-plugin-lazy-loading.git"
+  },
+  "bugs": "https://github.com/listenrightmeow/newk-plugin-lazy-loading/issues",
+  "homepage": "https://github.com/listenrightmeow/newk-plugin-lazy-loading#readme",
+  "newk": {
+    "type": "enhancement",
+    "category": "performance",
+    "priority": 6
+  },
+  "dependencies": {
+    "fast-glob": "^3.3.3"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "rimraf": "^5.0.0",
+    "semantic-release": "^21.1.2",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
