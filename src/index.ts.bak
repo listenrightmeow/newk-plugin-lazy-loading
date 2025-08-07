@@ -1,9 +1,9 @@
-import { ReplrodOptimizationPlugin } from './types';
+import { ReplrodOptimizationPlugin } from '@listenrightmeow/replrod/plugin/OptimizationPlugin';
 import { LazyLoadingOptimizer } from './LazyLoadingOptimizer.js';
 
 const plugin: ReplrodOptimizationPlugin = {
   metadata: {
-    name: '@listenrightmeow/newk-plugin-lazy-loading',
+    name: '@listenrightmeow/replrod-plugin-lazy-loading',
     version: '1.0.0',
     description: 'Lazy loading components and utilities for replrod',
     author: '@listenrightmeow',

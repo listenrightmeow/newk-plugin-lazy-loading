@@ -1,16 +1,12 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { OptimizationPlugin, OptimizationContext, OptimizationResult } from './types';
+import { OptimizationPlugin, OptimizationContext, OptimizationResult } from '@listenrightmeow/replrod/plugin/OptimizationPlugin';
 
 export class LazyLoadingOptimizer implements OptimizationPlugin {
   name = 'lazy-loading';
   description = 'Add lazy loading components and utilities for faster interactivity';
   category = 'performance' as const;
   priority = 5; // Medium priority
-
-  async apply(context: OptimizationContext): Promise<OptimizationResult> {
-    return this.optimize(context);
-  }
 
   async isApplicable(context: OptimizationContext): Promise<boolean> {
     // For now, just check if client/src directory exists
@@ -47,7 +43,7 @@ export class LazyLoadingOptimizer implements OptimizationPlugin {
       return {
         success: true,
         message: `Created ${componentsCreated} lazy loading components and utilities`,
-        details: {
+        metrics: {
           improvement: 'Faster interactivity through lazy loading',
           timeBefore: startTime,
           timeAfter: endTime
