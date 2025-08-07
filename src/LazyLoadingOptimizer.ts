@@ -1,0 +1,385 @@
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { OptimizationPlugin, OptimizationContext, OptimizationResult } from '@listenrightmeow/replrod/plugin/OptimizationPlugin';
+
+export class LazyLoadingOptimizer implements OptimizationPlugin {
+  name = 'lazy-loading';
+  description = 'Add lazy loading components and utilities for faster interactivity';
+  category = 'performance' as const;
+  priority = 5; // Medium priority
+
+  async isApplicable(context: OptimizationContext): Promise<boolean> {
+    // For now, just check if client/src directory exists
+    try {
+      await fs.access(path.join(context.projectPath, 'client', 'src'));
+      return true;
+    } catch {
+      return false;
+    }
+    
+    return false;
+  }
+
+  async optimize(context: OptimizationContext): Promise<OptimizationResult> {
+    try {
+      const startTime = Date.now();
+      let componentsCreated = 0;
+
+      // Create lazy loading utilities
+      await this.createLazyLoadingUtils(context.projectPath);
+      componentsCreated += 3;
+
+      // Create intersection observer hook
+      await this.createIntersectionObserverHook(context.projectPath);
+      componentsCreated += 1;
+
+      // Update existing components with lazy loading examples
+      await this.createLazyImageComponent(context.projectPath);
+      await this.createLazySectionComponent(context.projectPath);
+      componentsCreated += 2;
+
+      const endTime = Date.now();
+
+      return {
+        success: true,
+        message: `Created ${componentsCreated} lazy loading components and utilities`,
+        metrics: {
+          improvement: 'Faster interactivity through lazy loading',
+          timeBefore: startTime,
+          timeAfter: endTime
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Lazy loading optimization failed: ${(error as Error).message}`
+      };
+    }
+  }
+
+  async validate(context: OptimizationContext): Promise<boolean> {
+    try {
+      const utilsPath = path.join(context.projectPath, 'client', 'src', 'utils', 'lazyLoading.ts');
+      await fs.access(utilsPath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async createLazyLoadingUtils(projectPath: string): Promise<void> {
+    const utilsDir = path.join(projectPath, 'client', 'src', 'utils');
+    await fs.mkdir(utilsDir, { recursive: true });
+
+    const lazyLoadingUtils = `
+/**
+ * Lazy loading utilities for performance optimization
+ */
+
+// Lazy load a React component
+export function lazyWithPreload<T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+) {
+  const Component = React.lazy(factory);
+  
+  // Add preload method
+  (Component as any).preload = factory;
+  
+  return Component;
+}
+
+// Lazy load with retry mechanism
+export function lazyWithRetry<T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>,
+  retries = 3
+) {
+  return React.lazy(async () => {
+    let attempt = 0;
+    
+    while (attempt < retries) {
+      try {
+        return await factory();
+      } catch (error) {
+        attempt++;
+        if (attempt >= retries) {
+          throw error;
+        }
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+    
+    throw new Error('Failed to load component after retries');
+  });
+}
+
+// Image lazy loading utility
+export function createImageLoader() {
+  const loadImage = (src: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = src;
+    });
+  };
+
+  return loadImage;
+}
+
+// Preload critical resources
+export function preloadResource(href: string, as: string = 'script'): void {
+  const link = document.createElement('link');
+  link.rel = 'preload';
+  link.href = href;
+  link.as = as;
+  document.head.appendChild(link);
+}
+
+// Prefetch resources for next navigation
+export function prefetchResource(href: string): void {
+  const link = document.createElement('link');
+  link.rel = 'prefetch';
+  link.href = href;
+  document.head.appendChild(link);
+}
+`;
+
+    await fs.writeFile(path.join(utilsDir, 'lazyLoading.ts'), lazyLoadingUtils);
+  }
+
+  private async createIntersectionObserverHook(projectPath: string): Promise<void> {
+    const hooksDir = path.join(projectPath, 'client', 'src', 'hooks');
+    await fs.mkdir(hooksDir, { recursive: true });
+
+    const intersectionObserverHook = `
+import { useEffect, useRef, useState } from 'react';
+
+interface UseIntersectionObserverOptions {
+  threshold?: number;
+  rootMargin?: string;
+  triggerOnce?: boolean;
+}
+
+export function useIntersectionObserver(
+  options: UseIntersectionObserverOptions = {}
+) {
+  const { threshold = 0.1, rootMargin = '50px', triggerOnce = true } = options;
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [hasIntersected, setHasIntersected] = useState(false);
+  const elementRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const isVisible = entry.isIntersecting;
+        setIsIntersecting(isVisible);
+        
+        if (isVisible && !hasIntersected) {
+          setHasIntersected(true);
+          if (triggerOnce) {
+            observer.unobserve(element);
+          }
+        }
+      },
+      { threshold, rootMargin }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.unobserve(element);
+    };
+  }, [threshold, rootMargin, triggerOnce, hasIntersected]);
+
+  return {
+    elementRef,
+    isIntersecting,
+    hasIntersected
+  };
+}
+
+// Hook for lazy loading images
+export function useLazyImage(src: string, placeholder?: string) {
+  const [imageSrc, setImageSrc] = useState(placeholder);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const { elementRef, hasIntersected } = useIntersectionObserver();
+
+  useEffect(() => {
+    if (!hasIntersected) return;
+
+    const img = new Image();
+    img.onload = () => {
+      setImageSrc(src);
+      setIsLoaded(true);
+    };
+    img.onerror = () => {
+      setIsError(true);
+    };
+    img.src = src;
+  }, [hasIntersected, src]);
+
+  return {
+    elementRef,
+    imageSrc,
+    isLoaded,
+    isError
+  };
+}
+`;
+
+    await fs.writeFile(path.join(hooksDir, 'useIntersectionObserver.ts'), intersectionObserverHook);
+  }
+
+  private async createLazyImageComponent(projectPath: string): Promise<void> {
+    const componentsDir = path.join(projectPath, 'client', 'src', 'components');
+    await fs.mkdir(componentsDir, { recursive: true });
+
+    const lazyImageComponent = `
+import React from 'react';
+import { useLazyImage } from '../hooks/useIntersectionObserver';
+
+interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+  src: string;
+  alt: string;
+  placeholder?: string;
+  className?: string;
+}
+
+export function LazyImage({ 
+  src, 
+  alt, 
+  placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIxOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iIGZpbGw9IiNhYWEiPkxvYWRpbmc8L3RleHQ+PC9zdmc+',
+  className = '',
+  ...props 
+}: LazyImageProps) {
+  const { elementRef, imageSrc, isLoaded, isError } = useLazyImage(src, placeholder);
+
+  if (isError) {
+    return (
+      <div 
+        ref={elementRef}
+        className={\`flex items-center justify-center bg-gray-200 text-gray-500 \${className}\`}
+      >
+        Failed to load image
+      </div>
+    );
+  }
+
+  return (
+    <img
+      ref={elementRef}
+      src={imageSrc}
+      alt={alt}
+      className={\`transition-opacity duration-300 \${isLoaded ? 'opacity-100' : 'opacity-50'} \${className}\`}
+      {...props}
+    />
+  );
+}
+
+// Optimized picture element with lazy loading
+interface LazyPictureProps {
+  src: string;
+  alt: string;
+  sizes?: string;
+  className?: string;
+  webpSrc?: string;
+  avifSrc?: string;
+}
+
+export function LazyPicture({ 
+  src, 
+  alt, 
+  sizes = '100vw',
+  className = '',
+  webpSrc,
+  avifSrc 
+}: LazyPictureProps) {
+  const { elementRef, hasIntersected } = useIntersectionObserver();
+
+  return (
+    <picture ref={elementRef} className={className}>
+      {hasIntersected && avifSrc && (
+        <source srcSet={avifSrc} type="image/avif" />
+      )}
+      {hasIntersected && webpSrc && (
+        <source srcSet={webpSrc} type="image/webp" />
+      )}
+      <LazyImage
+        src={src}
+        alt={alt}
+        sizes={sizes}
+        className="w-full h-auto"
+      />
+    </picture>
+  );
+}
+`;
+
+    await fs.writeFile(path.join(componentsDir, 'LazyImage.tsx'), lazyImageComponent);
+  }
+
+  private async createLazySectionComponent(projectPath: string): Promise<void> {
+    const componentsDir = path.join(projectPath, 'client', 'src', 'components');
+    await fs.mkdir(componentsDir, { recursive: true });
+
+    const lazySectionComponent = `
+import React, { Suspense } from 'react';
+import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
+
+interface LazySectionProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+  className?: string;
+  threshold?: number;
+  rootMargin?: string;
+}
+
+export function LazySection({ 
+  children, 
+  fallback = <div className="animate-pulse bg-gray-200 h-32 rounded" />,
+  className = '',
+  threshold = 0.1,
+  rootMargin = '100px'
+}: LazySectionProps) {
+  const { elementRef, hasIntersected } = useIntersectionObserver({
+    threshold,
+    rootMargin,
+    triggerOnce: true
+  });
+
+  return (
+    <div ref={elementRef} className={className}>
+      {hasIntersected ? (
+        <Suspense fallback={fallback}>
+          {children}
+        </Suspense>
+      ) : (
+        fallback
+      )}
+    </div>
+  );
+}
+
+// Higher-order component for lazy loading
+export function withLazyLoading<P extends object>(
+  Component: React.ComponentType<P>,
+  fallback?: React.ReactNode
+) {
+  return function LazyComponent(props: P) {
+    return (
+      <LazySection fallback={fallback}>
+        <Component {...props} />
+      </LazySection>
+    );
+  };
+}
+`;
+
+    await fs.writeFile(path.join(componentsDir, 'LazySection.tsx'), lazySectionComponent);
+  }
+}
